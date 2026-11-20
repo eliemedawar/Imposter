@@ -4,10 +4,11 @@ A pass-the-phone party game for iPhone. Most players get the same secret word; t
 
 ## Features
 
+- Dark charcoal & red card-deck design: tap a card to flip it and see your secret word, tap again to pass it on
 - 8 built-in categories (Food, Places, Animals, Jobs, Sports, Household Objects, Transportation, Countries)
-- Create your own categories and words (or customize a copy of a built-in one)
-- Choose the number of imposters
-- Random first questioner, reveal screen showing the imposter(s) and both words
+- Create your own categories and words, or edit the built-in ones
+- Choose the number of imposters and the round timer length
+- Countdown timer, random first questioner, reveal screen showing the imposter(s) and both words
 - Players, settings and custom categories are saved on the phone
 
 ## Project layout
