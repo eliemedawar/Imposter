@@ -69,14 +69,14 @@ private let stickerWhite = Color(hex: 0xF4F4F6)
 private let stickerInk = Color(hex: 0x121214)
 
 /// The white die-cut border around a sticker.
-private func border(_ kind: StickerPath.Kind, width: CGFloat) -> some View {
+private func stickerBorder(_ kind: StickerPath.Kind, width: CGFloat) -> some View {
     StickerPath(kind: kind)
         .fill(stickerWhite)
         .overlay(StickerPath(kind: kind).stroke(stickerWhite, style: StrokeStyle(lineWidth: width, lineJoin: .round)))
 }
 
 /// A filled piece with a dark ink outline.
-private func inked(_ kind: StickerPath.Kind, fill: Color, width: CGFloat) -> some View {
+private func stickerInk(_ kind: StickerPath.Kind, fill: Color, width: CGFloat) -> some View {
     StickerPath(kind: kind)
         .fill(fill)
         .overlay(StickerPath(kind: kind).stroke(stickerInk, style: StrokeStyle(lineWidth: width, lineJoin: .round)))
@@ -89,12 +89,12 @@ struct SpySticker: View {
     var body: some View {
         let s = size / 100
         ZStack {
-            border(.shoulders, width: 9 * s)
-            border(.circle(50, 44, 24), width: 9 * s)
-            inked(.shoulders, fill: Color(hex: 0xC8343A), width: 3 * s)
-            inked(.circle(50, 44, 24), fill: Color(hex: 0x2B2D33), width: 3 * s)
-            inked(.circle(50, 47, 16), fill: Color(hex: 0x474A53), width: 3 * s)
-            inked(.mask, fill: Theme.red, width: 3 * s)
+            stickerBorder(.shoulders, width: 9 * s)
+            stickerBorder(.circle(50, 44, 24), width: 9 * s)
+            stickerInk(.shoulders, fill: Color(hex: 0xC8343A), width: 3 * s)
+            stickerInk(.circle(50, 44, 24), fill: Color(hex: 0x2B2D33), width: 3 * s)
+            stickerInk(.circle(50, 47, 16), fill: Color(hex: 0x474A53), width: 3 * s)
+            stickerInk(.mask, fill: Theme.red, width: 3 * s)
             StickerPath(kind: .ellipse(42, 45.5, 3.6, 2.4)).fill(stickerWhite)
             StickerPath(kind: .ellipse(58, 45.5, 3.6, 2.4)).fill(stickerWhite)
             StickerPath(kind: .cords)
@@ -113,9 +113,9 @@ struct BubbleSticker: View {
     var body: some View {
         let s = size / 100
         ZStack {
-            border(.bubble, width: 10 * s)
-            inked(.bubble, fill: Color(hex: 0x5B606B), width: 3 * s)
-            inked(.circle(50, 38, 17), fill: Color(hex: 0xECECEF), width: 3 * s)
+            stickerBorder(.bubble, width: 10 * s)
+            stickerInk(.bubble, fill: Color(hex: 0x5B606B), width: 3 * s)
+            stickerInk(.circle(50, 38, 17), fill: Color(hex: 0xECECEF), width: 3 * s)
             StickerPath(kind: .questionMark)
                 .stroke(Theme.redButton, style: StrokeStyle(lineWidth: 4.5 * s, lineCap: .round, lineJoin: .round))
             StickerPath(kind: .circle(50, 48.5, 2.6)).fill(Theme.redButton)
