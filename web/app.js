@@ -107,7 +107,7 @@
       : Math.random().toString(36).slice(2) + Date.now().toString(36);
 
   const defaultSettings = () => ({
-    players: [1, 2, 3, 4, 5].map((n) => ({ id: newId(), name: 'Player ' + n })),
+    playerCount: 5,
     imposterCount: 1,
     roundMinutes: 5,
     customCategories: [], // user categories, plus edited copies of built-in ones (same id)
@@ -118,7 +118,13 @@
   function loadSettings() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) return Object.assign(defaultSettings(), JSON.parse(raw));
+      if (raw) {
+        const saved = JSON.parse(raw);
+        // Older versions kept a list of named players.
+        if (saved.playerCount == null && Array.isArray(saved.players)) saved.playerCount = saved.players.length;
+        delete saved.players;
+        return Object.assign(defaultSettings(), saved);
+      }
     } catch (e) { /* storage unavailable: start fresh */ }
     return defaultSettings();
   }
@@ -229,13 +235,13 @@
   // ---------- Dealing ----------
 
   /** Imposters must be outnumbered by everyone else. */
-  const maxImposters = () => Math.max(1, Math.floor((settings.players.length - 1) / 2));
+  const MIN_PLAYERS = 3;
+  const MAX_PLAYERS = 20;
+  const playerCount = () => Math.min(MAX_PLAYERS, Math.max(MIN_PLAYERS, settings.playerCount || MIN_PLAYERS));
+  const maxImposters = () => Math.max(1, Math.floor((playerCount() - 1) / 2));
   const imposterCount = () => Math.min(Math.max(settings.imposterCount, 1), maxImposters());
-  const playersReady = () => settings.players.length >= 3 && settings.players.every((p) => trim(p.name));
 
   function startProblem() {
-    if (settings.players.length < 3) return 'Add at least 3 players';
-    if (!settings.players.every((p) => trim(p.name))) return 'Every player needs a name';
     if (!playableSelected().length) return 'Choose a category';
     return null;
   }
@@ -255,7 +261,7 @@
     recentWords.push(civilianWord.toLowerCase());
     if (recentWords.length > 20) recentWords.shift();
 
-    const players = settings.players.map((p) => ({ id: p.id, name: trim(p.name) }));
+    const players = Array.from({ length: playerCount() }, (_, i) => ({ id: i, name: `Player ${i + 1}` }));
     const imposterIds = new Set(shuffle(players).slice(0, imposterCount()).map((p) => p.id));
     return { categoryName: category.name, civilianWord, imposterWord, players, imposterIds, starter: pick(players) };
   }
@@ -347,7 +353,6 @@
   const modalRoot = document.getElementById('modal-root');
   const stack = [{ name: 'menu', params: {} }];
   const current = () => stack[stack.length - 1];
-  let focusAfterRender = null;
 
   function afterNavigate() {
     if (!stack.some((s) => s.name === 'timer')) stopTimer();
@@ -380,7 +385,6 @@
     switch (screen.name) {
       case 'menu': html = menuScreen(); break;
       case 'deck': html = deckScreen(); break;
-      case 'players': html = playersScreen(); break;
       case 'categories': html = categoriesScreen(); break;
       case 'words': html = wordsScreen(screen.params.id); break;
       case 'timer': html = timerScreen(); break;
@@ -397,11 +401,6 @@
     const newScroll = app.querySelector('.scroll');
     if (newScroll && keepScroll) newScroll.scrollTop = keepScroll;
     if (screen.name === 'timer') updateTimerUI();
-    if (focusAfterRender) {
-      const el = document.getElementById(focusAfterRender);
-      focusAfterRender = null;
-      if (el) el.focus();
-    }
   }
 
   // ---------- Shared pieces ----------
@@ -444,12 +443,15 @@
         </div>
 
         <div class="menu-grid">
-          <button class="menu-tile raised" data-action="go" data-to="players">
+          <div class="menu-tile raised">
             <span class="tile-icon">${ICONS.people}</span>
-            <span class="tile-value">${settings.players.length}</span>
+            <span class="tile-stepper">
+              <button class="mini-step" data-action="step" data-key="players" data-delta="-1" ${playerCount() <= MIN_PLAYERS ? 'disabled' : ''} aria-label="Fewer players">${ICONS.minus}</button>
+              <span class="tile-value">${playerCount()}</span>
+              <button class="mini-step" data-action="step" data-key="players" data-delta="1" ${playerCount() >= MAX_PLAYERS ? 'disabled' : ''} aria-label="More players">${ICONS.plus}</button>
+            </span>
             <span class="tile-label">Players</span>
-            <span class="tile-go">${ICONS.chevron}</span>
-          </button>
+          </div>
           <button class="menu-tile raised" data-action="go" data-to="categories">
             <span class="tile-icon">${ICONS.grid}</span>
             <span class="tile-value">${selectedCount}<small>/${totalCount}</small></span>
@@ -535,8 +537,8 @@
     return `
       <div class="controls ${game.revealed ? 'dimmed' : ''}">
         <div class="pill-row">
-          <button class="btn-dark" data-action="go" data-to="players">Players · ${settings.players.length}</button>
-          <button class="btn-dark" data-action="go" data-to="players">Imposters · ${imposterCount()}</button>
+          <button class="btn-dark" data-action="back">Players · ${playerCount()}</button>
+          <button class="btn-dark" data-action="back">Imposters · ${imposterCount()}</button>
         </div>
         <button class="btn-dark summary" data-action="go" data-to="categories"><span>${esc(summary)}</span>${ICONS.chevron}</button>
       </div>`;
@@ -575,44 +577,6 @@
     } finally {
       animating = false;
     }
-  }
-
-  // ---------- Players ----------
-
-  function stepper(key, title, subtitle, value, min, max, extraClass = '') {
-    return `
-      <div class="stepper raised ${extraClass}">
-        <div class="stepper-text"><div class="stepper-title">${title}</div><div class="stepper-sub">${subtitle}</div></div>
-        <button class="step-btn" data-action="step" data-key="${key}" data-delta="-1" ${value <= min ? 'disabled' : ''} aria-label="Fewer ${title.toLowerCase()}">${ICONS.minus}</button>
-        <span class="step-value">${value}</span>
-        <button class="step-btn" data-action="step" data-key="${key}" data-delta="1" ${value >= max ? 'disabled' : ''} aria-label="More ${title.toLowerCase()}">${ICONS.plus}</button>
-      </div>`;
-  }
-
-  function playersScreen() {
-    const rows = settings.players.map((p, i) => `
-      <div class="player-row raised">
-        <span class="badge">${i + 1}</span>
-        <input class="text-input" data-input="player-name" data-id="${esc(p.id)}" value="${esc(p.name)}" placeholder="Name"
-          aria-label="Player ${i + 1} name" autocomplete="off" autocapitalize="words" spellcheck="false" enterkeyhint="done">
-        <button class="row-x" data-action="remove-player" data-id="${esc(p.id)}" aria-label="Remove ${esc(p.name)}">${ICONS.close}</button>
-      </div>`).join('');
-
-    return `
-      ${topBar('Players', backButton())}
-      <div class="scroll">
-        <div class="stack">
-          ${rows}
-          <div class="add-row dashed">
-            <input id="new-player" class="text-input" data-input="new-player" placeholder="Add a player" aria-label="New player name"
-              autocomplete="off" autocapitalize="words" spellcheck="false" enterkeyhint="done">
-            <button class="icon-btn" data-action="add-player" aria-label="Add player">${ICONS.plus}</button>
-          </div>
-          ${stepper('imposters', 'Imposters', `Up to ${maxImposters()} with ${settings.players.length} players`, imposterCount(), 1, maxImposters(), 'first')}
-          ${stepper('minutes', 'Timer', 'Minutes per round', settings.roundMinutes, 1, 15)}
-        </div>
-      </div>
-      <div class="footer"><button class="btn-red" data-action="back">Done</button></div>`;
   }
 
   // ---------- Categories ----------
@@ -757,7 +721,7 @@
   }
 
   const HELP_STEPS = [
-    ['Set up', "Add everyone's name, choose how many imposters, and pick your categories."],
+    ['Set up', 'Choose how many players and imposters, and pick your categories.'],
     ['Pass the deck', 'Each player taps the card to see their secret word, memorizes it, then taps again to hide it and passes the phone on.'],
     ['The twist', "Most players get the same word. The imposter gets a different word from the same category, and doesn't know they're the imposter."],
     ['Ask questions', "Start the timer and take turns asking each other questions out loud. Never say your word. Listen for answers that don't quite fit."],
@@ -792,7 +756,7 @@
     card: () => {
       if (animating) return;
       const r = game.round;
-      if (!r) { push(playersReady() ? 'categories' : 'players'); return; }
+      if (!r) { push('categories'); return; }
       if (game.done) return;
       if (!game.revealed) {
         animateCard('flip', () => { game.revealed = true; });
@@ -805,23 +769,13 @@
     redeal: () => { if (!animating) animateCard('flip', dealNow); },
     'start-round': () => { startTimer(); push('timer'); },
 
-    'add-player': () => {
-      const field = document.getElementById('new-player');
-      const name = trim(field && field.value);
-      if (!name) { if (field) field.focus(); return; }
-      settings.players.push({ id: newId(), name });
-      settingsChanged();
-      focusAfterRender = 'new-player';
-      render();
-    },
-    'remove-player': (el) => {
-      settings.players = settings.players.filter((p) => p.id !== el.dataset.id);
-      settingsChanged();
-      render();
-    },
     step: (el) => {
       const delta = Number(el.dataset.delta);
-      if (el.dataset.key === 'imposters') {
+      if (el.dataset.key === 'players') {
+        settings.playerCount = Math.min(MAX_PLAYERS, Math.max(MIN_PLAYERS, playerCount() + delta));
+        settings.imposterCount = Math.min(settings.imposterCount, maxImposters());
+        settingsChanged();
+      } else if (el.dataset.key === 'imposters') {
         settings.imposterCount = Math.min(maxImposters(), Math.max(1, imposterCount() + delta));
         settingsChanged();
       } else {
@@ -903,27 +857,6 @@
     if (!el || el.disabled) return;
     const action = actions[el.dataset.action];
     if (action) action(el, e);
-  });
-
-  app.addEventListener('input', (e) => {
-    const field = e.target;
-    if (field.dataset.input !== 'player-name') return;
-    const player = settings.players.find((p) => p.id === field.dataset.id);
-    if (player) {
-      player.name = field.value;
-      settingsChanged();
-    }
-  });
-
-  app.addEventListener('keydown', (e) => {
-    if (e.key !== 'Enter') return;
-    const field = e.target;
-    if (field.dataset.input === 'new-player') {
-      e.preventDefault();
-      actions['add-player']();
-    } else if (field.dataset.input === 'player-name') {
-      field.blur();
-    }
   });
 
   // Stop iOS from pinch-zooming the game.

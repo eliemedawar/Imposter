@@ -441,49 +441,6 @@ button.menu-tile:active { transform: scale(0.97); }
   .face.center .sticker { width: 104px; height: 104px; }
 }
 
-/* ---------- Players ---------- */
-
-.player-row { display: flex; align-items: center; gap: 14px; height: 62px; padding: 0 6px 0 12px; }
-.text-input {
-  flex: 1;
-  min-width: 0;
-  height: 44px;
-  border: none;
-  outline: none;
-  background: transparent;
-  color: var(--text);
-  font-size: 17px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  -webkit-user-select: text;
-  user-select: text;
-}
-.row-x { flex: none; width: 44px; height: 44px; display: grid; place-items: center; color: var(--dim); }
-.row-x svg { width: 16px; height: 16px; }
-.add-row { display: flex; align-items: center; gap: 10px; height: 62px; padding: 0 8px 0 16px; }
-.add-row .text-input { font-size: 16px; }
-
-.stepper { display: flex; align-items: center; gap: 12px; padding: 16px; border-radius: 18px; }
-.stepper.first { margin-top: 10px; }
-.stepper-text { flex: 1; min-width: 0; }
-.stepper-title { font-size: 17px; letter-spacing: 0.1em; }
-.stepper-sub { margin-top: 4px; font-size: 12px; font-weight: 400; letter-spacing: 0.05em; color: var(--muted); }
-.step-btn {
-  flex: none;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: var(--bg);
-  color: var(--red);
-  display: grid;
-  place-items: center;
-  transition: transform 0.12s;
-}
-.step-btn:active { transform: scale(0.94); }
-.step-btn:disabled { color: var(--dashed); }
-.step-btn svg { width: 16px; height: 16px; }
-.step-value { min-width: 30px; text-align: center; font-size: 26px; color: var(--red); }
-
 /* ---------- Category & word grids ---------- */
 
 .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 16px; }

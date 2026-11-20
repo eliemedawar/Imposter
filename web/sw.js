@@ -1,5 +1,5 @@
 // Network-first cache so the game works offline and still picks up updates.
-const CACHE = 'imposter-v2';
+const CACHE = 'imposter-v3';
 const ASSETS = [
   './',
   'index.html',
