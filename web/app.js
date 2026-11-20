@@ -249,6 +249,24 @@
   const game = { round: null, index: 0, revealed: false, done: false, stale: true };
   const recentWords = [];
 
+  /**
+   * Picks k of n seats so no two imposters sit next to each other around the table
+   * (the last player counts as next to Player 1). Splits the other players into k
+   * random gaps of at least one, then rotates the whole table by a random amount.
+   */
+  function pickImposterSeats(n, k) {
+    const others = n - k;
+    const cuts = shuffle(Array.from({ length: others - 1 }, (_, i) => i + 1)).slice(0, k - 1).sort((a, b) => a - b);
+    const bounds = [0, ...cuts, others];
+    let seat = Math.floor(Math.random() * n);
+    const seats = [];
+    for (let i = 0; i < k; i++) {
+      seats.push(seat % n);
+      seat += 1 + (bounds[i + 1] - bounds[i]);
+    }
+    return seats;
+  }
+
   function makeRound() {
     if (startProblem()) return null;
     const category = pick(playableSelected());
@@ -262,7 +280,7 @@
     if (recentWords.length > 20) recentWords.shift();
 
     const players = Array.from({ length: playerCount() }, (_, i) => ({ id: i, name: `Player ${i + 1}` }));
-    const imposterIds = new Set(shuffle(players).slice(0, imposterCount()).map((p) => p.id));
+    const imposterIds = new Set(pickImposterSeats(players.length, imposterCount()));
     return { categoryName: category.name, civilianWord, imposterWord, players, imposterIds, starter: pick(players) };
   }
 
